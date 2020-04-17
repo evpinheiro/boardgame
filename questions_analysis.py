@@ -1,38 +1,39 @@
 import sys
 
-from board_game import Board, Player, Game
+from board_game import BoardNormalRule, BoardPlayerImmunity, Player, Game, BoardInterface
 
 
-def get_board():
+def get_board_normal_rule():
     ladders = {3: 16, 5: 7, 15: 25, 18: 20, 21: 32}
     snakes = {12: 2, 14: 11, 17: 4, 31: 19, 35: 22}
-    return Board(36, ladders, snakes)
+    return BoardNormalRule(36, ladders, snakes)
 
 
 # Question 1 #
 def answer_question1(simulations_run):
     question = "In a two person game, what is the probability that the player who starts the game wins?"
-    starting_player_victories_frequency = simulate_two_players_match(simulations_run)
+    board = get_board_normal_rule()
+    starting_player_victories_frequency \
+        = simulate_two_players_match(board, Player('player1', 1), Player('player2', 1), simulations_run)
     print(question)
     print('The probability is about ' + str(starting_player_victories_frequency))
 
 
-def simulate_two_players_match(simulations_run: int, player2_start_square=1):
-    board = get_board()
-    starting_player = 'player1'
+def simulate_two_players_match(board: BoardInterface, player1: Player, player2: Player, simulations_run: int):
     starting_player_victories_amount = 0
+    game = Game(board, [player1, player2])
     for count in range(simulations_run):
-        game = Game(board, [Player(starting_player, 1), Player('player2', player2_start_square)])
         winner = game.play()
-        if winner.name == starting_player:
+        if winner.name == player1.name:
             starting_player_victories_amount += 1
+        game.restart()
     return starting_player_victories_amount / simulations_run
 
 
 # Question 2 #
 def answering_question2(simulations_run):
     question = "On average, how many snakes are landed on in each game?"
-    board = get_board()
+    board = get_board_normal_rule()
     total_amount_lands_on_snake = 0
     for run in range(simulations_run):
         players = [Player('player1', 1), Player('player2', 1)]
@@ -57,7 +58,7 @@ def count_lands_on_snake(players):
 def answering_question3(simulations_run):
     question = "If each time a player landed on a ladder and there was only a 50% chance they could take it, " \
                "what is the average number of rolls needed to complete a game? "
-    board = get_board()
+    board = get_board_normal_rule()
     for run in range(simulations_run):
         players = [Player('player1', 1), Player('player2', 1)]
         game = Game(board, players)
@@ -71,16 +72,22 @@ def answering_question4(simulations_run):
     question = "Starting with the base game, you decide you want the game to have approximately fair odds. You do " \
                "this by changing the square that Player 2 starts on. Which square for Player 2’s start position gives " \
                "the closest to equal odds for both players? "
-    board = get_board()
+    board = get_board_normal_rule()
     start_position_and_frequencies = {}
-    for player2_start_square in range(1, board.squares_qtt+1):
-        start_position_and_frequencies[player2_start_square] = \
-            simulate_two_players_match(simulations_run, player2_start_square)
+    simulate_player2_starting_in_all_board_squares(board, Player('player2', 1), simulations_run, start_position_and_frequencies)
+    max_fair_frequency_positions = get_max_fair_positions(start_position_and_frequencies)
     print(question)
-    print(start_position_and_frequencies)
-    max_frequency_positions = get_max_fair_positions(start_position_and_frequencies)
     print([(str(max_frequency_position), start_position_and_frequencies[max_frequency_position])
-           for max_frequency_position in max_frequency_positions])
+           for max_frequency_position in max_fair_frequency_positions])
+
+
+def simulate_player2_starting_in_all_board_squares(board: BoardInterface, player2: Player,
+                                                   simulations_run, start_position_and_frequencies):
+    for player2_start_square in range(1, board.squares_qtt + 1):
+        player2.start_squares = player2_start_square
+        start_position_and_frequencies[player2_start_square] = \
+            simulate_two_players_match(board, Player('player1', 1), player2, simulations_run)
+    print(start_position_and_frequencies)
 
 
 def get_max_fair_positions(start_position_and_probability: dict):
@@ -103,13 +110,20 @@ def answering_question5(simulations_run):
     question = "In a different attempt to change the odds of the game, instead of starting Player 2 on a different " \
                "square, you decide to give Player 2 immunity to the first snake that they land on. What is the " \
                "approximate probability that Player 1 wins now? "
-    starting_player_victories_frequency = simulate_two_players_match(simulations_run)
+    ladders = {3: 16, 5: 7, 15: 25, 18: 20, 21: 32}
+    snakes = {12: 2, 14: 11, 17: 4, 31: 19, 35: 22}
+    player2 = Player('player2', 1)
+    board = BoardPlayerImmunity(36, ladders, snakes, player2)
+    start_position_and_frequencies = {}
+    simulate_player2_starting_in_all_board_squares(board, player2, simulations_run, start_position_and_frequencies)
+    max_fair_frequency_positions = get_max_fair_positions(start_position_and_frequencies)
     print(question)
-    print('The probability is about ' + str(starting_player_victories_frequency))
+    print([(str(max_frequency_position), start_position_and_frequencies[max_frequency_position])
+           for max_frequency_position in max_fair_frequency_positions])
 
 
 if __name__ == '__main__':
-    answer_question1(10000)
+    # answer_question1(10000)
     # answering_question2(10000)
     # answering_question3(10000)
     # answering_question4(10000)
