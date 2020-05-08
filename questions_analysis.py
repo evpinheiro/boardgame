@@ -1,6 +1,6 @@
 import sys
 
-from board_game import BoardNormalRule, BoardPlayerImmunity, Player, Game, BoardInterface
+from board_game import BoardNormalRule, BoardPlayerImmunity, Player, Game, BoardInterface, BoardFiftyPercentRule
 
 
 def get_board_normal_rule():
@@ -55,15 +55,32 @@ def count_board_objects_use(used_object_dictionary: dict):
     return total_quantity
 
 
-# Question 3 #
+# Question 3#
 def answering_question3(simulations_run):
+    print("Question3: If each time a player landed on a ladder and there was only a 50% chance they could "
+          "take it, what is the average number of rolls needed to complete a game? ")
+    count_sampled_matches_polls = 0
+    ladders = {3: 16, 5: 7, 15: 25, 18: 20, 21: 32}
+    snakes = {12: 2, 14: 11, 17: 4, 31: 19, 35: 22}
+    for run in range(simulations_run):
+        board = BoardFiftyPercentRule(36, ladders, snakes)
+        players = [Player('player1', 1), Player('player2', 1)]
+        game = Game(board, players)
+        game.play()
+        for player in game.get_players():
+            count_sampled_matches_polls += player.get_rolls_quantity()
+    print('The average is ' + str(round(count_sampled_matches_polls / simulations_run, 1)))
+
+
+# Question 3 Wrong#
+def answering_question3_wrong(simulations_run):
     print("Question3: If each time a player landed on a ladder and there was only a 50% chance they could "
           "take it, what is the average number of rolls needed to complete a game? ")
     ladders_frequencies = estimate_ladders_use_relative_frequencies(get_board_normal_rule(), Player("player1", 1),
                                                                     Player("player2", 1), simulations_run)
     ladder_keys_closest_fifty = get_keys_with_probability_closest_to_reference(ladders_frequencies, 0.5)
     print("The ladder with relative frequency closest to 50% and its(their) percent value is(are)",
-          [(ladder_keys_closest_fifty, round(100*ladders_frequencies[key], 1)) for key in ladder_keys_closest_fifty])
+          [(ladder_keys_closest_fifty, round(100 * ladders_frequencies[key], 1)) for key in ladder_keys_closest_fifty])
     count_sampled_matches = 0
     count_sampled_matches_polls = 0
     for run in range(simulations_run):
@@ -71,21 +88,22 @@ def answering_question3(simulations_run):
         players = [Player('player1', 1), Player('player2', 1)]
         game = Game(board, players)
         game.play()
-        if check_contain_key(board.get_ladders_used(), ladder_keys_closest_fifty) is not None:
+        if check_contain_key(board.get_ladders_used(), ladder_keys_closest_fifty):  # is not None:
             count_sampled_matches += 1
             for player in game.get_players():
                 count_sampled_matches_polls += player.get_rolls_quantity()
     print('The average is ' + str(round(count_sampled_matches_polls / count_sampled_matches, 1)))
 
 
-def check_contain_key(dictionary: dict, key):
-    for key in key:
+def check_contain_key(dictionary: dict, keys):
+    for key in keys:
         if dictionary.get(key) is not None:
             return True
     return False
 
 
-def estimate_ladders_use_relative_frequencies(board: BoardNormalRule, player1: Player, player2: Player, simulations_run: int):
+def estimate_ladders_use_relative_frequencies(board: BoardNormalRule, player1: Player, player2: Player,
+                                              simulations_run: int):
     """
     Estimate relative frequencies in a game with the normal rule board and two players.
     A ladder that is used more than one time is count only once
@@ -165,12 +183,12 @@ def answering_question5(simulations_run):
     board = BoardPlayerImmunity(36, ladders, snakes, immune_player_name)
     starting_player_victories_frequency \
         = simulate_two_players_match(board, Player('player1', 1), Player('player2', 1), simulations_run)
-    print('The probability is about ' + str(round(starting_player_victories_frequency, 2)))
+    print('The probability is about ' + str(round(starting_player_victories_frequency, 4)))
 
 
 if __name__ == '__main__':
-    answering_question1(10000)
-    answering_question2(10000)
+    # answering_question1(10000)
+    # answering_question2(10000)
     answering_question3(10000)
-    answering_question4(10000)
-    answering_question5(10000)
+    # answering_question4(10000)
+    # answering_question5(10000)

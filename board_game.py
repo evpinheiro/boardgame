@@ -87,6 +87,33 @@ class BoardNormalRule(BoardInterface):
         return BoardNormalRule(self.squares_qtt, self.ladders, self.snakes)
 
 
+class BoardFiftyPercentRule(BoardInterface):
+
+    def __init__(self, squares_qtt: int, the_ladders: dict, the_snakes: dict):
+        # constants
+        self.squares_qtt = squares_qtt
+        self.ladders = the_ladders
+        self.snakes = the_snakes
+        # variables
+        self.ladders_use = {}
+        self.snakes_use = {}
+
+    def must_use_object(self):
+        return random.random() >= 0.5
+
+    def move_player(self, player: Player, movements_quantity: int):
+        next_square = player.present_position + movements_quantity
+        if self.snakes.get(next_square) is not None:
+            snake_key = str(next_square) + "-" + str(self.snakes.get(next_square))
+            self.snakes_use[snake_key] = self.snakes_use.get(snake_key, 0) + 1
+            next_square = self.snakes.get(next_square)
+        if self.ladders.get(next_square) is not None and self.must_use_object():
+            ladder_key = str(next_square) + "-" + str(self.ladders.get(next_square))
+            self.ladders_use[ladder_key] = self.ladders_use.get(ladder_key, 0) + 1
+            next_square = self.ladders.get(next_square)
+        player.update_position(next_square)
+
+
 class BoardPlayerImmunity(BoardInterface):
 
     def __init__(self, squares_qtt: int, the_ladders: dict, the_snakes: dict, immune_player_name):
